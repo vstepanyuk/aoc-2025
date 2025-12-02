@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 
 pub const DATA: &str = include_str!("./input.txt");
 
-pub fn run(input: &str, f: fn(RangeInclusive<u64>) -> Vec<u64>) -> u64 {
+pub fn run<I: ParallelIterator<Item = u64>>(input: &str, f: fn(RangeInclusive<u64>) -> I) -> u64 {
     input
         .split(',')
         .filter_map(|line| {
@@ -19,27 +19,21 @@ pub fn run(input: &str, f: fn(RangeInclusive<u64>) -> Vec<u64>) -> u64 {
         .sum()
 }
 
-pub fn part1(range: RangeInclusive<u64>) -> Vec<u64> {
-    range
-        .into_par_iter()
-        .filter(|i| {
-            let digits_str = i.to_string();
-            let len = digits_str.len();
+pub fn part1(range: RangeInclusive<u64>) -> impl ParallelIterator<Item = u64> {
+    range.into_par_iter().filter(|i| {
+        let digits_str = i.to_string();
+        let len = digits_str.len();
 
-            len % 2 == 0 && digits_str[0..len / 2] == digits_str[len / 2..]
-        })
-        .collect()
+        len % 2 == 0 && digits_str[0..len / 2] == digits_str[len / 2..]
+    })
 }
 
-pub fn part2(range: RangeInclusive<u64>) -> Vec<u64> {
-    range
-        .into_par_iter()
-        .filter(|n| {
-            let digits_str = n.to_string();
+pub fn part2(range: RangeInclusive<u64>) -> impl ParallelIterator<Item = u64> {
+    range.into_par_iter().filter(|n| {
+        let digits_str = n.to_string();
 
-            (1..=digits_str.len() / 2).any(|i| digits_str.as_bytes().chunks(i).all_equal())
-        })
-        .collect()
+        (1..=digits_str.len() / 2).any(|i| digits_str.as_bytes().chunks(i).all_equal())
+    })
 }
 
 #[cfg(test)]
