@@ -1,4 +1,3 @@
-use itertools::Itertools;
 use pathfinding::prelude::*;
 use tap::Tap;
 
@@ -24,24 +23,21 @@ pub fn part1(grid: Grid) -> usize {
 }
 
 pub fn part2(mut grid: Grid) -> usize {
-    let mut count = 0;
-    loop {
-        let to_remove = grid
-            .iter()
-            .filter(|(x, y)| grid.neighbours((*x, *y)).len() < 4)
-            .collect_vec();
+    let mut to_remove = Vec::new();
+    std::iter::from_fn(|| {
+        to_remove.extend(
+            grid.iter()
+                .filter(|&(x, y)| grid.neighbours((x, y)).len() < 4),
+        );
 
-        if to_remove.is_empty() {
-            break;
-        }
-
-        count += to_remove.len();
-        to_remove.into_iter().for_each(|v| {
+        let removed = to_remove.len();
+        to_remove.drain(..).for_each(|v| {
             grid.remove_vertex(v);
         });
-    }
 
-    count
+        (removed > 0).then_some(removed)
+    })
+    .sum()
 }
 
 #[cfg(test)]
