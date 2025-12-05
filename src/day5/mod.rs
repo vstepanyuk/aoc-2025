@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 
 use itertools::Itertools;
-use rangemap::RangeInclusiveMap;
+use rangemap::RangeInclusiveSet;
 
 pub const DATA: &str = include_str!("./input.txt");
 
@@ -34,9 +34,9 @@ pub fn part1(ranges: Vec<RangeInclusive<usize>>, ids: &[usize]) -> usize {
 }
 
 pub fn part2(ranges: Vec<RangeInclusive<usize>>, _id: &[usize]) -> usize {
-    RangeInclusiveMap::from_iter(ranges.into_iter().map(|r| (r, ())))
+    RangeInclusiveSet::from_iter(ranges.into_iter())
         .into_iter()
-        .map(|(range, _)| range.count())
+        .map(RangeInclusive::count)
         .sum()
 }
 
