@@ -2,65 +2,24 @@ use itertools::Itertools;
 
 pub const DATA: &str = include_str!("./input.txt");
 
-type Expr = (Vec<u64>, char);
-
-pub fn run(input: &str, f: fn(&str) -> u64) -> u64 {
-    f(input)
-}
-
 pub fn part1(input: &str) -> u64 {
-    let count = input
-        .lines()
-        .next()
-        .unwrap()
-        .split_ascii_whitespace()
-        .count();
-    let mut exprs: Vec<Expr> = vec![Default::default(); count];
+    let (nums, ops) = parse(input);
 
-    for line in input.lines() {
-        if line.contains('+') {
-            let ops = line
-                .split_ascii_whitespace()
-                .filter_map(|l| l.chars().next())
-                .collect_vec();
+    ops.iter()
+        .enumerate()
+        .map(|(i, op)| {
+            let nn = nums[i].iter().filter_map(|x| x.trim().parse::<u64>().ok());
 
-            for (i, o) in ops.into_iter().enumerate() {
-                exprs[i].1 = o;
+            if *op == '*' {
+                nn.product::<u64>()
+            } else {
+                nn.sum::<u64>()
             }
-        } else {
-            let nums = line
-                .split_ascii_whitespace()
-                .filter_map(|n| n.parse::<u64>().ok())
-                .collect_vec();
-
-            for (i, n) in nums.into_iter().enumerate() {
-                exprs[i].0.push(n);
-            }
-        }
-    }
-
-    exprs
-        .into_iter()
-        .map(|expr| {
-            let initial = (expr.1 == '*') as u64;
-
-            let result =
-                expr.0.into_iter().fold(
-                    initial,
-                    |acc, n| {
-                        if initial == 1 {
-                            acc * n
-                        } else {
-                            acc + n
-                        }
-                    },
-                );
-            result
         })
         .sum()
 }
 
-pub fn part2(input: &str) -> u64 {
+fn parse(input: &str) -> (Vec<Vec<String>>, Vec<char>) {
     let last_line = input.lines().rev().next().unwrap(); //.unwrap().chars();
 
     let mut lens = last_line
@@ -90,34 +49,35 @@ pub fn part2(input: &str) -> u64 {
             nums[i].push(n.clone());
         }
     }
+    (nums, ops)
+}
 
-    let mut result = 0;
-    for (i, op) in ops.iter().enumerate() {
-        let a = nums[i].iter().rev().collect_vec();
+pub fn part2(input: &str) -> u64 {
+    let (nums, ops) = parse(input);
 
-        let len = nums[i][0].len();
-        let mut b = vec![];
-        for n in 0..len {
-            let c = a
-                .iter()
-                .map(|s| s.chars().nth(n).unwrap())
-                .filter(|c| *c != ' ')
-                .collect::<String>()
-                .parse::<u64>()
-                .unwrap();
+    ops.iter()
+        .enumerate()
+        .map(|(i, op)| {
+            let len = nums[i][0].len();
 
-            b.push(c);
-        }
+            let nn = (0..len)
+                .map(|n| {
+                    nums[i]
+                        .iter()
+                        .filter_map(|s| s.chars().nth(n))
+                        .filter(|c| *c != ' ')
+                        .rev()
+                        .collect::<String>()
+                })
+                .filter_map(|x| x.trim().parse::<u64>().ok());
 
-        if *op == '*' {
-            let p = b.into_iter().product::<u64>();
-            result += p;
-        } else {
-            let s = b.into_iter().sum::<u64>();
-            result += s;
-        }
-    }
-    result
+            if *op == '*' {
+                nn.into_iter().product::<u64>()
+            } else {
+                nn.into_iter().sum::<u64>()
+            }
+        })
+        .sum()
 }
 
 #[cfg(test)]
@@ -130,13 +90,13 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let result = super::run(INPUT, super::part1);
+        let result = super::part1(INPUT);
         assert_eq!(result, 4277556)
     }
 
     #[test]
     fn test_2() {
-        let result = super::run(INPUT, super::part2);
+        let result = super::part2(INPUT);
         assert_eq!(result, 3263827)
     }
 }
