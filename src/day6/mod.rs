@@ -2,24 +2,7 @@ use itertools::Itertools;
 
 pub const DATA: &str = include_str!("./input.txt");
 
-pub fn part1(input: &str) -> u64 {
-    let (nums, ops) = parse(input);
-
-    ops.iter()
-        .enumerate()
-        .map(|(i, op)| {
-            let nn = nums[i].iter().filter_map(|x| x.trim().parse::<u64>().ok());
-
-            if *op == '*' {
-                nn.product::<u64>()
-            } else {
-                nn.sum::<u64>()
-            }
-        })
-        .sum()
-}
-
-fn parse(input: &str) -> (Vec<Vec<String>>, Vec<char>) {
+pub fn run(input: &str, f: impl Fn(&[Vec<String>], usize) -> Vec<String>) -> u64 {
     let last_line = input.lines().rev().next().unwrap(); //.unwrap().chars();
 
     let mut lens = last_line
@@ -49,35 +32,40 @@ fn parse(input: &str) -> (Vec<Vec<String>>, Vec<char>) {
             nums[i].push(n.clone());
         }
     }
-    (nums, ops)
-}
-
-pub fn part2(input: &str) -> u64 {
-    let (nums, ops) = parse(input);
 
     ops.iter()
         .enumerate()
         .map(|(i, op)| {
-            let len = nums[i][0].len();
-
-            let nn = (0..len)
-                .map(|n| {
-                    nums[i]
-                        .iter()
-                        .filter_map(|s| s.chars().nth(n))
-                        .filter(|c| *c != ' ')
-                        .rev()
-                        .collect::<String>()
-                })
+            let nn = f(&nums, i)
+                .into_iter()
                 .filter_map(|x| x.trim().parse::<u64>().ok());
 
             if *op == '*' {
-                nn.into_iter().product::<u64>()
+                nn.product::<u64>()
             } else {
-                nn.into_iter().sum::<u64>()
+                nn.sum::<u64>()
             }
         })
         .sum()
+}
+
+pub fn part1(nums: &[Vec<String>], i: usize) -> Vec<String> {
+    nums[i].clone()
+}
+
+pub fn part2(nums: &[Vec<String>], i: usize) -> Vec<String> {
+    let len = nums[i][0].len();
+
+    (0..len)
+        .map(move |n| {
+            nums[i]
+                .iter()
+                .filter_map(|s| s.chars().nth(n))
+                .filter(|c| *c != ' ')
+                .rev()
+                .collect::<String>()
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -90,13 +78,13 @@ mod tests {
 
     #[test]
     fn test_1() {
-        let result = super::part1(INPUT);
+        let result = super::run(INPUT, super::part1);
         assert_eq!(result, 4277556)
     }
 
     #[test]
     fn test_2() {
-        let result = super::part2(INPUT);
+        let result = super::run(INPUT, super::part2);
         assert_eq!(result, 3263827)
     }
 }
