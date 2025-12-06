@@ -2,7 +2,10 @@ use itertools::Itertools;
 
 pub const DATA: &str = include_str!("./input.txt");
 
-pub fn run(input: &str, f: impl Fn(&[Vec<String>], usize) -> Vec<String>) -> u64 {
+pub fn run(
+    input: &str,
+    f: impl for<'a> Fn(&'a [Vec<String>], usize) -> Box<dyn Iterator<Item = String> + 'a>,
+) -> u64 {
     let last_line = input.lines().rev().next().unwrap(); //.unwrap().chars();
 
     let mut lens = last_line
@@ -49,23 +52,21 @@ pub fn run(input: &str, f: impl Fn(&[Vec<String>], usize) -> Vec<String>) -> u64
         .sum()
 }
 
-pub fn part1(nums: &[Vec<String>], i: usize) -> Vec<String> {
-    nums[i].clone()
+pub fn part1(nums: &[Vec<String>], i: usize) -> Box<dyn Iterator<Item = String> + '_> {
+    Box::new(nums[i].iter().cloned())
 }
 
-pub fn part2(nums: &[Vec<String>], i: usize) -> Vec<String> {
+pub fn part2(nums: &[Vec<String>], i: usize) -> Box<dyn Iterator<Item = String> + '_> {
     let len = nums[i][0].len();
 
-    (0..len)
-        .map(move |n| {
-            nums[i]
-                .iter()
-                .filter_map(|s| s.chars().nth(n))
-                .filter(|c| *c != ' ')
-                .rev()
-                .collect::<String>()
-        })
-        .collect()
+    Box::new((0..len).map(move |n| {
+        nums[i]
+            .iter()
+            .filter_map(|s| s.chars().nth(n))
+            .filter(|c| *c != ' ')
+            .rev()
+            .collect::<String>()
+    }))
 }
 
 #[cfg(test)]
