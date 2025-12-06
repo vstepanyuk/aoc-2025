@@ -63,7 +63,6 @@ pub fn part2(nums: &[Vec<String>], i: usize) -> Box<dyn Iterator<Item = String> 
         nums[i]
             .iter()
             .filter_map(|s| s.chars().nth(n))
-            .filter(|c| *c != ' ')
             .rev()
             .collect::<String>()
     }))
