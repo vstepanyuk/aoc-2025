@@ -6,59 +6,44 @@ pub const DATA: &str = include_str!("./input.txt");
 
 type Point3 = (i64, i64, i64);
 
-fn parse(input: &str) -> impl Iterator<Item = Point3> + '_ {
-    input.lines().filter_map(|l| {
-        let mut s = l.split(',');
-        let x = s.next()?.parse().ok()?;
-        let y = s.next()?.parse().ok()?;
-        let z = s.next()?.parse().ok()?;
-        Some((x, y, z))
-    })
+fn parse(input: &str) -> (Vec<Point3>, Vec<(i64, Point3, Point3)>) {
+    let points = input
+        .lines()
+        .filter_map(|l| {
+            let mut s = l.split(',');
+            Some((
+                s.next()?.parse().ok()?,
+                s.next()?.parse().ok()?,
+                s.next()?.parse().ok()?,
+            ))
+        })
+        .collect_vec();
+
+    let distances = points
+        .iter()
+        .tuple_combinations()
+        .map(|(p1, p2)| (distance(p1, p2), *p1, *p2))
+        .sorted_by_key(|(d, _, _)| *d)
+        .collect_vec();
+
+    (points, distances)
 }
 
-fn distance(a: &Point3, b: &Point3) -> f32 {
-    ((a.0 - b.0).pow(2) as f32 + (a.1 - b.1).pow(2) as f32 + (a.2 - b.2).pow(2) as f32).sqrt()
+#[inline]
+fn distance(a: &Point3, b: &Point3) -> i64 {
+    (a.0 - b.0).pow(2) + (a.1 - b.1).pow(2) + (a.2 - b.2).pow(2)
 }
 
 pub fn part1(input: &str, limit: usize) -> i64 {
-    let mut distances = vec![];
-    let points = parse(input).collect_vec();
+    let (points, distances) = parse(input);
 
-    for (i, p1) in points.iter().enumerate() {
-        for p2 in points.iter().skip(i + 1) {
-            distances.push((distance(p1, p2), *p1, *p2));
-        }
-    }
-
-    distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-
-    let mut clusters: Vec<HashSet<Point3>> = vec![];
+    let mut clusters: Vec<HashSet<Point3>> =
+        points.iter().map(|p| HashSet::from_iter([*p])).collect();
 
     for (_, p1, p2) in distances.into_iter().take(limit) {
-        let ids = clusters
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| c.contains(&p1) || c.contains(&p2))
-            .map(|(i, _)| i)
-            .sorted()
-            .rev()
-            .collect_vec();
-
-        match ids.len() {
-            1 => {
-                clusters[ids[0]].insert(p1);
-                clusters[ids[0]].insert(p2);
-            }
-            2 => {
-                let mut nn = HashSet::new();
-
-                let a = clusters.remove(ids[0]);
-                let b = clusters.remove(ids[1]);
-                nn.extend(a);
-                nn.extend(b);
-                clusters.push(nn);
-            }
-            _ => clusters.push(HashSet::from_iter([p1, p2])),
+        let ids = find_clusters(&clusters, &p1, &p2);
+        if ids.len() == 2 {
+            merge(&mut clusters, &ids);
         }
     }
 
@@ -72,53 +57,44 @@ pub fn part1(input: &str, limit: usize) -> i64 {
 }
 
 pub fn part2(input: &str) -> i64 {
-    let mut distances = vec![];
-    let points = parse(input).collect_vec();
-
-    for (i, p1) in points.iter().enumerate() {
-        for p2 in points.iter().skip(i + 1) {
-            distances.push((distance(p1, p2), *p1, *p2));
-        }
-    }
-
-    distances.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    let (points, distances) = parse(input);
 
     let mut clusters: Vec<HashSet<Point3>> =
         points.iter().map(|p| HashSet::from_iter([*p])).collect();
 
     for (_, p1, p2) in distances.into_iter() {
-        let ids = clusters
-            .iter()
-            .enumerate()
-            .filter(|(_, c)| c.contains(&p1) || c.contains(&p2))
-            .map(|(i, _)| i)
-            .sorted()
-            .rev()
-            .collect_vec();
+        let ids = find_clusters(&clusters, &p1, &p2);
 
-        match ids.len() {
-            1 => {
-                clusters[ids[0]].insert(p1);
-                clusters[ids[0]].insert(p2);
-            }
-            2 => {
-                let mut nn = HashSet::new();
+        if ids.len() == 2 {
+            merge(&mut clusters, &ids);
+        }
 
-                let a = clusters.remove(ids[0]);
-                let b = clusters.remove(ids[1]);
-                nn.extend(a);
-                nn.extend(b);
-                clusters.push(nn);
-
-                if clusters.len() == 1 {
-                    return p1.0 * p2.0;
-                }
-            }
-            _ => clusters.push(HashSet::from_iter([p1, p2])),
+        if clusters.len() == 1 {
+            return p1.0 * p2.0;
         }
     }
 
     unreachable!()
+}
+
+fn find_clusters(clusters: &[HashSet<Point3>], p1: &Point3, p2: &Point3) -> Vec<usize> {
+    clusters
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| c.contains(&p1) || c.contains(&p2))
+        .map(|(i, _)| i)
+        .sorted()
+        .rev()
+        .collect_vec()
+}
+
+fn merge(clusters: &mut Vec<HashSet<Point3>>, ids: &[usize]) {
+    let mut a = clusters.remove(ids[0]);
+    let b = clusters.remove(ids[1]);
+
+    a.extend(b);
+
+    clusters.push(a);
 }
 
 #[cfg(test)]
