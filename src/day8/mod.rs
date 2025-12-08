@@ -1,55 +1,56 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 
 use itertools::Itertools;
+use petgraph::unionfind::UnionFind;
 
 pub const DATA: &str = include_str!("./input.txt");
 
-type Point3 = (i64, i64, i64);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+struct Point3(i64, i64, i64);
+impl Point3 {
+    #[inline]
+    fn distance(&self, other: &Self) -> i64 {
+        let dx = self.0 - other.0;
+        let dy = self.1 - other.1;
+        let dz = self.2 - other.2;
 
-fn parse(input: &str) -> (Vec<Point3>, Vec<(i64, Point3, Point3)>) {
-    let points = input
+        dx * dx + dy * dy + dz * dz
+    }
+}
+
+fn parse(input: &str) -> Vec<Point3> {
+    input
         .lines()
         .filter_map(|l| {
             let mut s = l.split(',');
-            Some((
+            Some(Point3(
                 s.next()?.parse().ok()?,
                 s.next()?.parse().ok()?,
                 s.next()?.parse().ok()?,
             ))
         })
-        .collect_vec();
+        .collect()
+}
 
-    let distances = points
-        .iter()
+pub fn part1(input: &str, limit: usize) -> usize {
+    let points = parse(input);
+
+    let uf = (0..points.len())
         .tuple_combinations()
-        .map(|(p1, p2)| (distance(p1, p2), *p1, *p2))
+        .map(|(i, j)| (points[i].distance(&points[j]), i, j))
         .sorted_by_key(|(d, _, _)| *d)
-        .collect_vec();
+        .take(limit)
+        .fold(UnionFind::new(points.len()), |mut uf, (_, i, j)| {
+            uf.union(i, j);
+            uf
+        });
 
-    (points, distances)
-}
-
-#[inline]
-fn distance(a: &Point3, b: &Point3) -> i64 {
-    (a.0 - b.0).pow(2) + (a.1 - b.1).pow(2) + (a.2 - b.2).pow(2)
-}
-
-pub fn part1(input: &str, limit: usize) -> i64 {
-    let (points, distances) = parse(input);
-
-    let mut clusters: Vec<HashSet<Point3>> =
-        points.iter().map(|p| HashSet::from_iter([*p])).collect();
-
-    for (_, p1, p2) in distances.into_iter().take(limit) {
-        let ids = find_clusters(&clusters, &p1, &p2);
-        if ids.len() == 2 {
-            merge(&mut clusters, &ids);
-        }
-    }
-
-    clusters
-        .iter()
-        .map(|c| c.len() as i64)
+    (0..points.len())
+        .fold(HashMap::new(), |mut acc, i| {
+            *acc.entry(uf.find(i)).or_insert(0) += 1;
+            acc
+        })
+        .values()
         .sorted()
         .rev()
         .take(3)
@@ -57,44 +58,27 @@ pub fn part1(input: &str, limit: usize) -> i64 {
 }
 
 pub fn part2(input: &str) -> i64 {
-    let (points, distances) = parse(input);
+    let points = parse(input);
 
-    let mut clusters: Vec<HashSet<Point3>> =
-        points.iter().map(|p| HashSet::from_iter([*p])).collect();
+    let distances = (0..points.len())
+        .tuple_combinations()
+        .map(|(i, j)| (points[i].distance(&points[j]), i, j))
+        .sorted_by_key(|(d, _, _)| *d);
 
-    for (_, p1, p2) in distances.into_iter() {
-        let ids = find_clusters(&clusters, &p1, &p2);
+    let mut len: usize = points.len();
+    let mut uf = UnionFind::new(len);
 
-        if ids.len() == 2 {
-            merge(&mut clusters, &ids);
+    for (_, i, j) in distances {
+        if uf.union(i, j) {
+            len -= 1;
         }
 
-        if clusters.len() == 1 {
-            return p1.0 * p2.0;
+        if len == 1 {
+            return points[i].0 * points[j].0;
         }
     }
 
     unreachable!()
-}
-
-fn find_clusters(clusters: &[HashSet<Point3>], p1: &Point3, p2: &Point3) -> Vec<usize> {
-    clusters
-        .iter()
-        .enumerate()
-        .filter(|(_, c)| c.contains(&p1) || c.contains(&p2))
-        .map(|(i, _)| i)
-        .sorted()
-        .rev()
-        .collect_vec()
-}
-
-fn merge(clusters: &mut Vec<HashSet<Point3>>, ids: &[usize]) {
-    let mut a = clusters.remove(ids[0]);
-    let b = clusters.remove(ids[1]);
-
-    a.extend(b);
-
-    clusters.push(a);
 }
 
 #[cfg(test)]
