@@ -34,7 +34,7 @@ pub fn part1(ranges: Vec<RangeInclusive<usize>>, ids: &[usize]) -> usize {
 }
 
 pub fn part2(ranges: Vec<RangeInclusive<usize>>, _id: &[usize]) -> usize {
-    RangeInclusiveSet::from_iter(ranges.into_iter())
+    RangeInclusiveSet::from_iter(ranges)
         .into_iter()
         .map(RangeInclusive::count)
         .sum()

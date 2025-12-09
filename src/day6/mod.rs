@@ -6,7 +6,7 @@ pub fn run(
     input: &str,
     f: impl for<'a> Fn(&'a [Vec<String>], usize) -> Box<dyn Iterator<Item = String> + 'a>,
 ) -> u64 {
-    let last_line = input.lines().rev().next().unwrap(); //.unwrap().chars();
+    let last_line = input.lines().next_back().unwrap(); //.unwrap().chars();
 
     let mut lens = last_line
         .split(|x| x != ' ')
@@ -40,7 +40,6 @@ pub fn run(
         .enumerate()
         .map(|(i, op)| {
             let nn = f(&nums, i)
-                .into_iter()
                 .filter_map(|x| x.trim().parse::<u64>().ok());
 
             if *op == '*' {
