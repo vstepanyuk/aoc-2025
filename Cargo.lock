@@ -28,7 +28,6 @@ dependencies = [
  "memoize",
  "pathfinding",
  "petgraph",
- "polygonical",
  "rangemap",
  "rayon",
  "tap",
@@ -125,15 +124,6 @@ name = "fixedbitset"
 version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d674e81391d1e1ab681a28d99df07927c6d4aa5b027d7da16ba32d1d21ecd99"
-
-[[package]]
-name = "float-cmp"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "98de4bbd547a563b716d8dfa9aad1cb19bfab00f4fa09a6a4ed21dbcf44ce9c4"
-dependencies = [
- "num-traits",
-]
 
 [[package]]
 name = "float_next_after"
@@ -421,15 +411,6 @@ dependencies = [
  "hashbrown 0.15.5",
  "indexmap",
  "serde",
-]
-
-[[package]]
-name = "polygonical"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7ea54a5aac399455538901e57d767125569eee6bcaee1323b32e02e22b2ac86"
-dependencies = [
- "float-cmp",
 ]
 
 [[package]]
